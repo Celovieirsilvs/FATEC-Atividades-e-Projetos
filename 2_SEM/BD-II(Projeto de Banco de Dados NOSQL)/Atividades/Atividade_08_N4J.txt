@@ -1,0 +1,45 @@
+//Atividade 8 – Banco de Dados NO-SQL – Neo4J – Consultas
+//Utilizando o BD importado com Filmes, Artistas e Elenco no Neo4J para Cinema , e a linguagem CYPHER:
+/*a) Mostre o título do filme e nome dos artistas do elenco para filmes de Terror, e que só está classificado como terror, sem 
+combinação com outro gênero.*/
+MATCH (f:Filme)-[e:Elenco]->(a)
+WHERE f.generos =~ '(?i)Horror.*'
+RETURN f.titulo, a.nome
+/*b) Mostre os diretores brasileiros (nome) de filmes de comédia dos últimos 20 anos.*/
+MATCH (f)-[e:Elenco]->(a)
+WHERE f.generos =~ '(?i).*Comedy.*' 
+AND e.tipo_participação =~ '(?i).*Diretor.*'
+AND a.local_nascto =~ '(?i)Brazil.*'
+RETURN f.titulo, a.nome, f.ano_lançamento,
+ORDER BY f.ano_lançamento DESC
+
+/*c) Mostre o título, gênero, ano de lançamento e duração dos filmes japoneses com mais de 120 minutos de duração. Ordene pela 
+maior duração.*/
+MATCH (f:Filme)
+WHERE f.país = 'Japan'
+AND f.duração > 120
+RETURN f.titulo, f.generos, f.ano_lançamento, f.duração
+ORDER BY f.duração DESC
+/*d) Mostre o nome e idade do ator ou atriz que fizeram parte do elenco de filmes brasileiros de drama, que morreram com mais de 
+75 anos. Ordene pela idade.*/
+MATCH (f)-[e:Elenco]->(a)
+WHERE a.dt_nascto IS NOT NULL
+AND a.dt_nascto =~ '.*-.*'
+AND a.dt_obito IS NOT NULL
+AND a.dt_nascto =~ '.*-.*'
+AND f.país = 'Brazil'
+AND f.generos =~ '(?i).*Drama*'
+AND e.tipo_participação =~ '(?i).*Act*'
+RETURN a.nome, a.dt_nascto, a.dt_obito,
+CASE
+   WHEN a.dt_obito IS NULL THEN
+        duration.between(date(a.dt_nascto),date()).years
+   WHEN duration.between(date(a.dt_nascto),date(a.dt_obito)).years > 75 THEN
+        duration.between(date(a.dt_nascto),date(a.dt_obito)).years     
+   END as Idade
+ORDER BY Idade DESC
+/*e) Mostre o nome dos diretores cuja nacionalidade é diferente do pais que produziu o filme*/
+MATCH (f)-[e:Elenco]->(a)
+WHERE e.tipo_participação =~ '(?i).*Director.*'
+AND f.país <> a.local_nascto
+RETURN f.titulo, a.nome, f.país 

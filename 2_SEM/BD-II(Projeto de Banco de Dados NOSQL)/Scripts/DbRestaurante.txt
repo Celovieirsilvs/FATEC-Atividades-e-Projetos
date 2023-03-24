@@ -1,0 +1,93 @@
+use restaurante
+
+show collections
+db.prato.insertOne({id: 01, 
+                     Nome: "Fricassê de Frango", 
+                     Preço: [{preço_atual: 45.00, dt_vigência: new Date()}, 
+                             {preço_ant: 35.99, dt_vig_incio: ISODate("2022-06-02T06:00:00.000Z"), dt_vig_termino: ISODate("2022-10-05T19:30:12.545Z")}],
+                     Tamanho: "Médio"})
+db.prato.insert({id: 02, 
+                     Nome: "Feijoada individual", 
+                     Preço: [{preço_atual: 22.00, dt_vigência: ISODate("2022-08-18T06:00:33.333Z")}, 
+                             {preço_ant: 28.59, dt_vig_incio: ISODate("2022-07-31T06:00:00.000Z"), dt_vig_termino: ISODate("2022-10-05T19:30:12.545Z")}],
+                     Tamanho: "Grande"})
+                     
+db.ingredientes.insertMany([{id: 01, 
+                     Nome: "Feijão preto", 
+                     Preço_custo: 13.90,
+                     Unidade_med: "g",
+                     Qtde_estoque: 10},
+                     {id: 02, 
+                     Nome: "arroz branco", 
+                     Preço_custo: "25.50",
+                     Unidade_med: "Kg",
+                     Qtde_estoque: 18},
+                     {id: 03, 
+                     Nome: "linguiça calabresa", 
+                     Preço_custo: 35.90,
+                     Unidade_med: "Kg",
+                     Qtde_estoque: 5},
+                     {id: 04, 
+                     Nome: "Peito frango", 
+                     Preço_custo: 28.00,
+                     Unidade_med: "Kg",
+                     Qtde_estoque: 16},
+                     {id: 05, 
+                     Nome: "batata palha", 
+                     Preço_custo: 5.69,
+                     Unidade_med: "g",
+                     Qtde_estoque: 13},
+                     {id: 06, 
+                     Nome: "Creme leite", 
+                     Preço_custo: 2.70,
+                     Unidade_med: "g",
+                     Qtde_estoque: 30}])
+
+db.composicao.insertMany([{id_prato: 01,
+                           id_ingr: [01,02,03],
+                           quant_receita: 500}, 
+                           {id_prato: 02,
+                           id_ingr: [04,05,06],
+                           quant_receita: 385}}])
+db.composicao.find()
+db.prato.find()
+db.ingredientes.find()
+
+db.composicao.update({id_prato:02}, 
+    {$set:{id_ingr: [01,02,03]}})
+    
+db.composicao.update({id_prato:01}, 
+    {$set:{id_ingr: [04,05,06]}})
+
+db.composicao.aggregate({$lookup: 
+                        {from: "prato",
+                         localField: "id_prato",
+                         foreignField: "id",
+                         as: "Comp_prato"}}, 
+                         {$lookup: {
+                         from: "ingredientes",
+                         localField: "id_ingr",
+                         foreignField: "id",
+                         as: "Comp_ingr"
+                         }},
+{$unwind:"$Comp_prato"},
+{$unwind:"$Comp_ingr"},
+{$project: {_id:0, "Comp_prato.Nome": 1, "Comp_ingr.Nome": 1, quant_receita:1}})
+
+db.prato.aggregate({$lookup: 
+                        {from: "composicao",
+                         localField: "id",
+                         foreignField: "id_prato",
+                         as: "Comp_prato"}},
+{$unwind:"$Comp_prato"},
+{$match: {"Preço.preço_atual": {$gt: 25.00}}},
+{$project: {_id:0, Nome: 1, Tamanho: 1, "Preço.preço_atual":1, 
+            "Preço.preço_ant":1, "Preço.dt_vigência":1, "Preço.dt_vig_incio":1, 
+            "Preço.dt_vig_termino":1}})
+            
+db.prato.find({"Preço.preço_atual": {$gte: 25.00}})
+   .projection({_id:0, Nome: 1, Tamanho: 1, "Preço.preço_atual":1, 
+            "Preço.preço_ant":1, "Preço.dt_vigência":1, "Preço.dt_vig_incio":1, 
+            "Preço.dt_vig_termino":1})
+   .sort({_id:-1})
+   .limit(100)

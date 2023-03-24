@@ -1,0 +1,41 @@
+/*Nome:Marcelo Vieira da Silva
+RA: 2041382211027*/
+use "imdb_auladb"
+db.movie.find()
+/*Atividade 06 -Banco de Dados NO-SQL –MongoDB
+Utilizando o comando aggregate e group na base importada do IMDB ,responda às seguintes consultas:*/
+//a)Mostre a contagem de filmes por Diretor. Mostre o nome(s) do(s) diretor(es) quando tiverem no máximo 2.
+db.movie.aggregate({$group: {_id: {diretores: "$directors"},
+                    contagem_filmes: {$count: {}}}},
+                    {$match: {contagem_filmes: {$lte:2}}}},
+                    {$sort: {contagem_filmes: -1}})
+                    
+//b)Mostre a contagem de filmes por país e idioma.
+db.movie.aggregate({$group: {
+    _id: {pais: "$countries", idioma: "$languages"},
+    contagem_por_pais_idioma: {$count: {} } } },
+    {$project: {//pais:"$_id.pais", idioma:"$_id.idioma", 
+    contagem_por_pais_idioma: 1,_id:1}})
+//c)Mostre a quantidade de filmes por gênero em que atuou o ator Robert de Niro.
+db.movie.aggregate({$match: {"actors": /De Niro/i}},
+                   {$group: { _id: {genero: "$genre"}, 
+                    contagem_filmes_gen: {$count: { }}},
+                    {$project: {_id:1 ,contagem_filmes_gen:1}},
+                    {$sort: {contagem_filmes_gen: -1}}) 
+//d) Mostre o total de votos por Gênero de filme com mais de 10 mil votos.
+db.movie.aggregate({$group: {
+    _id: {gênero: "$genre"},
+    total_votos: {$sum: "$votes"} },
+    {$match: {total_votos: {$gt: 10.000} }}, 
+    {$project: {_id:1,total_votos: 1}},
+    {$sort: {total_votos: -1})
+//e) Mostre os 10 filmes com maior elenco, título e quantidade do elenco
+db.movie.aggregate({$group: {
+    _id: {tam_elenco: {$size: "$actors"}},
+    contagem_gen_por_tam_elenco: {$count: {}},
+    maior_elenco: {$max: "$actors"}
+    maior_titulo: {$max: "$title"}
+    },
+    {$project: {maior_elenco:1, maior_titulo:1, tamanho: "$_id.tam_elenco",
+    contagem_gen_por_tam_elenco: 1, _id:1}},
+    {$sort: {tamanho: -1})

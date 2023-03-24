@@ -1,0 +1,46 @@
+use "inventario_aula"
+/*Atividade 05: Banco NO-SQL – MongoDB
+Com base nos atributos do Modelo Lógico-Relacional, utilizando a linguagem javascript no SGBD MongoDB
+a) Altere a estrutura de equipamento para referenciar os departamentos em que o computador foi alocado (dois departamentos, um 
+que já alocou e desalocou e o atual em que está alocado);*/
+db.equipamento.updateOne({patrimonio: 100},{$set: {alocacao_eqpto:[{departamento_id: 10, nome_dep: "Informatica", 
+                                                dt_hr_inst: ISODate("2022-04-24T18:50:35.555Z"), dt_hr_desint: new Date()}, 
+                                                {departamento_id: 11, nome_dep: "Administração", 
+                                                dt_hr_inst: new Date()}]} })
+db.equipamento.find()
+/*b) Altere a estrutura de equipamento para referenciar os periféricos instalados nos computadores atualmente, com a data de 
+instalação (dois periféricos no computador cadastrado em aula, se necessário cadastre mais um periférico)*/
+db.equipamento.insertOne({patrimonio: 102, modelo: "Logitech G203 LIGHTSYNC RGB", tipo: "Periferico", categoria: "Mouse", 
+                         fornecimento: {fornecedor_cnpj: 123987, dt_aquisição: new Date(), 
+                         valor_aquisicao: 128.99, nota_fiscal: "MOU123", garantia: 24}})
+db.equipamento.updateOne({tipo: "Computador"}, {$set: {perif_inst: [{num_patr_perif: 101, dt_hr_inst: ISODate("2022-04-25T10:38:11.111Z")},
+                                                                 {num_patr_perif: 102, dt_hr_inst: ISODate("2022-04-26T14:45:45.555Z")}]}})
+/*c) Faça uma consulta que mostre os seguintes dados do computador : patrimonio, marca, processador, nome dos softwares 
+instalados, data de instalação, versão e número da licença*/
+db.equipamento.aggregate({$match: {tipo: /Computador/i}},
+                          {$lookup : 
+                            {from: "software",
+                            localField: "softwares_instalados.id_softw",
+                            foreignField: "id",
+                            as: "softwares_inst"
+                            }
+},{$unwind: "$softwares_inst"},
+  {$project: {_id: 0, patrimonio: 1, modelo: 1, "caracteristicas.processador": 1, "softwares_inst.nome": 1, 
+                                    "softwares_inst.versao": 1, 
+                                    "softwares_instalados.dt_hora_instalação": 1,  "softwares_instalados.licença": 1,
+                                    }})
+/*d) Faça uma consulta que mostre os seguintes dados do departamento : nome, centro de custos, patrimonio e modelo dos 
+computadores alocados e a data de alocação.*/
+db.departamento.aggregate({$lookup : 
+                          {from: "equipamento",
+                           localField: "id",
+                           foreignField: "alocacao_eqpto.departamento_id",
+                           as: "dep_alocações"
+                           },
+},{$match: {"dep_alocações.tipo": /Comp/i}}, 
+  {$unwind: "$dep_alocações"},
+  {$project: {_id: 0, nome: 1, centro_custo: 1, "dep_alocações.patrimonio": 1, "dep_alocações.modelo": 1,
+                                    "dep_alocações.alocacao_eqpto.dt_hr_inst": 1}})
+db.software.find()
+db.departamento.find()
+db.equipamento.find()
