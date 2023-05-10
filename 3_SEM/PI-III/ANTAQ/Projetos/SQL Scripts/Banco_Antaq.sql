@@ -18,8 +18,12 @@ CREATE TABLE tbCarga_Regiao(IDCarga INT,
 
 COPY tbCarga_Regiao(IDCarga, Regiao_Hidro, Valor_mov) FROM 'C:\2022\2022Carga_Regiao.csv' DELIMITER ';' CSV HEADER; 
 
-UPDATE tbCarga_Regiao SET valor_mov = REPLACE(Valor_mov, ',', '.');
-ALTER TABLE tbCarga_Regiao ALTER COLUMN valor_mov TYPE NUMERIC(10,3) USING valor_mov::NUMERIC(10,3);
+SELECT * FROM tbCarga_Regiao;
+ALTER TABLE tbCarga_Regiao ADD COLUMN valor NUMERIC(10,3);
+UPDATE tbCarga_Regiao SET valor_mov = REPLACE(Valor_mov, ',', '.')::NUMERIC;
+ALTER TABLE tbCarga_Regiao ALTER COLUMN valor_mov TYPE NUMERIC(10,2) USING valor_mov::Numeric(10,2);
+ALTER TABLE tbCarga_Regiao DROP COLUMN Valor_mov;
+ALTER TABLE tbCarga_Regiao RENAME COLUMN valor TO ValorMovimentado_Regiao;
 SELECT * FROM tbCarga_Regiao;
 
 --Tabela Carga Hidrovia
@@ -31,7 +35,9 @@ CREATE TABLE tbCarga_Hidrovia(IDCarga INT,
 COPY tbCarga_Hidrovia(IDCarga, Hidrovia, Valor_Movimentado_Hidrovia) FROM 'C:\2022\2022Carga_Hidrovia.csv' DELIMITER ';' CSV HEADER; 
 
 --Tabela Carga_Hidrovia - ALTER
+SELECT * FROM tbCarga_Hidrovia;
 UPDATE tbCarga_Hidrovia SET Valor_Movimentado_Hidrovia = REPLACE(Valor_Movimentado_Hidrovia, ',', '.');
+ALTER TABLE tbCarga_Hidrovia DROP COLUMN Valor_Movimentado_Hidrovia;
 ALTER TABLE tbCarga_Hidrovia ALTER COLUMN Valor_Movimentado_Hidrovia TYPE NUMERIC(10,3) USING Valor_Movimentado_Hidrovia::NUMERIC(10,3);
 SELECT * FROM tbCarga_Hidrovia;
 
@@ -42,10 +48,10 @@ CREATE TABLE tbCarga_Rio (
 	Rio VARCHAR(30),
 	ValorMovimentado_Rio VARCHAR(10)
 );
-COPY tbCarga_Rio(IDCarga, Rio, ValorMovimentado_Rio) FROM 'C:\2022\2022Carga_Rio.csv' DELIMITER ';' CSV HEADER; 
-
-UPDATE tbCarga_Rio SET ValorMovimentado_Rio = REPLACE(ValorMovimentado_Rio, ',', '.');
-ALTER TABLE tbCarga_Rio ALTER COLUMN ValorMovimentado_Rio TYPE NUMERIC(10,3) USING ValorMovimentado_Rio::NUMERIC(10,3);
+ALTER TABLE tbCarga_Rio ADD COLUMN valor NUMERIC(10,3);
+UPDATE tbCarga_Rio SET valor = REPLACE(ValorMovimentado_Rio, ',', '.')::NUMERIC;
+ALTER TABLE tbCarga_Rio DROP COLUMN ValorMovimentado_Rio;
+ALTER TABLE tbCarga_Rio RENAME COLUMN valor TO ValorMovimentado_Rio;
 SELECT * FROM tbCarga_Rio;
 
 --Tabela Carga_Conteinerizada
@@ -58,8 +64,10 @@ CREATE TABLE tbCarga_Conteinerizada (
 --Importação
 COPY tbCarga_Conteinerizada(CDMercadoria_conteinerizada, IDCarga, vl_peso_carga) FROM 'C:\2022\2022Carga_Conteinerizada.csv' DELIMITER ';' CSV HEADER; 
 --Alterando
-UPDATE tbCarga_Conteinerizada SET vl_peso_carga = REPLACE(vl_peso_carga, ',', '.');
-ALTER TABLE tbCarga_Conteinerizada ALTER COLUMN vl_peso_carga TYPE NUMERIC(10,3) USING vl_peso_carga::NUMERIC(10,3);
+ALTER TABLE tbCarga_Conteinerizada ADD COLUMN valor NUMERIC(10,3);
+UPDATE tbCarga_Conteinerizada SET valor = REPLACE(vl_peso_carga, ',', '.')::NUMERIC;
+ALTER TABLE tbCarga_Conteinerizada DROP COLUMN vl_peso_carga;
+ALTER TABLE tbCarga_Conteinerizada RENAME COLUMN valor TO vl_peso_carga;
 SELECT * FROM tbCarga_Conteinerizada;
 
 --tbTaxa_ocupação
@@ -73,17 +81,21 @@ CREATE TABLE tbTaxa_ocupação(
 );
 
 COPY tbTaxa_ocupação(IDBerco, Dia_TaxaOcupacao, Mes_TaxaOcupacao, Ano_TaxaOcupacao, Tempo_Min_dias) FROM 'C:\2022\2022TaxaOcupacao.csv' DELIMITER ';' CSV HEADER; 
-
+SELECT DISTINCT IDBerco, mes_taxaocupacao, SUM(tempo_min_dias) FROM tbTaxa_Ocupação
+GROUP BY IDBerco,mes_taxaocupacao
+ORDER BY mes_taxaocupacao DESC, SUM ASC;
+DELETE FROM tbTaxa_ocupação
+WHERE tempo_min_dias = 0;
 --tbTempos_Atracacao
 DROP TABLE IF EXISTS tbTempos_Atracacao CASCADE;
 CREATE TABLE tbTempos_Atracacao(
-	IDAtracao VARCHAR(8),
+	IDAtracao INT,
 	TEspera_Atracacao VARCHAR(15),
 	TEsperaInicioOp VARCHAR(15),
 	TOperacao VARCHAR(15),
 	TEsperaDesatracacao VARCHAR(15),
 	TAtracado VARCHAR(15),
-	TEstrada VARCHAR(15)
+	TEstrada VARCHAR(15),
 );
 
 COPY tbTempos_Atracacao(IDAtracao, TEspera_Atracacao, TEsperaInicioOp, TOperacao, TEsperaDesatracacao, TAtracado,TEstrada) FROM 'C:\2022\2022TaxaOcupacao.csv' DELIMITER ';' CSV HEADER; 
